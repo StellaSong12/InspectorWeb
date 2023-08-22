@@ -12,7 +12,7 @@
                                 <v-list-item :key="request.uid" v-show="requests_visibility[request.uid]" class="request-item" two-line>
                                     <v-list-item-content class="py-0">
                                         <v-list-item-title class="pt-2">
-                                            <span class="method" :class="request.headers.method.toLowerCase()">
+                                            <span class="method" :class="request.headers.method">
                                                 {{ request.headers.method }}
                                             </span>
                                             {{ request.headers.url.pathname }}

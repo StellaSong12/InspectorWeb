@@ -171,10 +171,14 @@
                             readBody(raw_headers, r.body).then(body => {
                                 if (this.request === r) {
                                     if (this.json || ['{', '['].includes(body[0])) {
-                                        const parsed = JSON.parse(body)
-                                        if (parsed) {
-                                            body = JSON.stringify(parsed, null, 2)
-                                        }
+                                        try {
+                                            const parsed = JSON.parse(body)
+                                            if (parsed) {
+                                                body = JSON.stringify(parsed, null, 2)
+                                            }
+                                        } catch (e) {
+                                            console.log("updateDetails: " + e)
+                                        }                                        
                                     }
                                     this.$set(this.details, 'body', body)
                                 }

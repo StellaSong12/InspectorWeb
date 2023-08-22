@@ -34,9 +34,13 @@ export function decode (msg) {
     const raw_headers = headers.join('\n')
 
     headers = parseHeaders(raw_headers)
+    if (headers.method == null) {
+      headers.method = '-'
+    }
 
-    const body = new Blob([zlib.gunzipSync(Buffer.from(msg.data, p + 1))], { type: headers['content-type'] })
-
+    // const body = new Blob([zlib.gunzipSync(Buffer.from(msg.data, p + 1))], { type: headers['content-type'] })
+    const body = new Blob([Buffer.from(msg.data, p + 1)], { type: headers['content-type'] })
+    
     return { uid, headers, raw_headers, body }
   }
   return false

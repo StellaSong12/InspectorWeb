@@ -35,7 +35,7 @@
                             <Database />
                         </v-stepper-content>
                         <v-stepper-content :step="2">
-                            <Network :active="current_page === 2" :settings="settings.network" :ip="host.ip" :port="settings.port" @requests="setRequestsCount" />
+                            <Network :active="current_page === 2" :settings="settings.network" :ip="host.ip" :port="settings.websocket_port" @requests="setRequestsCount" />
                         </v-stepper-content>
                         <v-stepper-content v-for="(plugin, i) in plugins" :key="plugin.key" :step="i+3">
                             <Plugin :active="current_page === i+3" :plugin="plugin" />
@@ -59,7 +59,7 @@
                             </v-flex>
                         </v-layout>
                     </v-flex>
-                    <v-flex shrink align-self-center>
+                    <!-- <v-flex shrink align-self-center>
                         <v-fade-transition>
                             <v-row v-show="current_page <= 1" class="mr-2">
                                 <span class="version">
@@ -74,7 +74,7 @@
                                 </v-icon>
                             </v-row>
                         </v-fade-transition>
-                    </v-flex>
+                    </v-flex> -->
                 </v-layout>
             </v-footer>
             <Settings v-model="settings_popup" :settings.sync="settings" />
@@ -92,13 +92,14 @@
     import { settings as default_settings } from './views/settings/defaults'
     import { defaultsDeep, orderBy, debounce } from 'lodash'
     import { cancelRequests } from './plugins/http'
-    import checkUpdate from './plugins/update'
+    // import checkUpdate from './plugins/update'
 
     const pages = [
         {
             key: 'database',
             name: 'Database'
-        },
+        }
+        ,
         {
             key: 'network',
             name: 'Network'
@@ -127,7 +128,7 @@
             host: { ip: '' },
             m_devices: [],
             now: Date.now(),
-            release: undefined,
+            // release: undefined,
             show_device_picker: false
         }),
         computed: {
@@ -227,9 +228,9 @@
             this.$nextTick(() => {
                 this.mounted = true
             })
-            checkUpdate(this.version).then(data => {
-                this.release = data
-            })
+            // checkUpdate(this.version).then(data => {
+            //     this.release = data
+            // })
         },
         methods: {
             open: open.bind(window),
@@ -243,6 +244,7 @@
             loadPlugins () {
                 cancelRequests()
                 return this.$http.get('/plugins').then(({ data }) => {
+                    console.log(data)
                     this.plugins = data
                 }).finally(() => {
                     const current_page = parseInt(localStorage.getItem('current_page'))

@@ -18,8 +18,7 @@ export function formatDuration (duration) {
   }
 
   if (usec) {
-    msg.push(`${(usec / 1000).toFixed(2)} milliseconds`)
+    msg.push(`${usec} milliseconds`)
   }
-
   return msg.join(' and ')
 }

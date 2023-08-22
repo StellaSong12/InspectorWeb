@@ -27,15 +27,6 @@
                     </v-flex>
                     <v-flex class="panel px-5">
                         <v-container v-if="selected === 0">
-                            <v-radio-group v-model="settings.dark_mode" row>
-                                <v-radio label="Light" value="light" on-icon="mdi-white-balance-sunny" />
-                                <v-spacer />
-                                <v-radio label="Dark" value="dark" on-icon="mdi-weather-night" />
-                                <v-spacer />
-                                <v-radio v-if="supportsThemeDetection" label="Automatic" value="auto" on-icon="mdi-theme-light-dark" />
-                            </v-radio-group>
-                        </v-container>
-                        <v-container v-if="selected === 1">
                             <v-switch v-model="settings.network.sleep" label="Disconnect when Network is not selected" hide-details />
                             <v-flex offset-xs1>
                                 <small>(This helps to prevent unnecessary memory and cpu usage)</small>
@@ -44,12 +35,19 @@
                             <v-row class="mt-2">
                                 <v-col cols="3">
                                     <v-text-field
-                                            label="Port"
+                                            label="http Port"
                                             v-model="settings.port"
                                             v-mask="'#####'"
                                             hide-details />
                                 </v-col>
                                 <v-col cols="4">
+                                    <v-text-field
+                                            label="socket Port"
+                                            v-model="settings.websocket_port"
+                                            v-mask="'#####'"
+                                            hide-details />
+                                </v-col>
+                                <v-col cols="5">
                                     <v-text-field
                                             label="Clear requests after"
                                             v-model="settings.network.limit"
@@ -65,6 +63,15 @@
                                             hide-details />
                                 </v-col>
                             </v-row>
+                        </v-container>
+                        <v-container v-if="selected === 1">
+                            <v-radio-group v-model="settings.dark_mode" row>
+                                <v-radio label="Light" value="light" on-icon="mdi-white-balance-sunny" />
+                                <v-spacer />
+                                <v-radio label="Dark" value="dark" on-icon="mdi-weather-night" />
+                                <v-spacer />
+                                <v-radio v-if="supportsThemeDetection" label="Automatic" value="auto" on-icon="mdi-theme-light-dark" />
+                            </v-radio-group>
                         </v-container>
                     </v-flex>
                 </v-layout>
@@ -84,7 +91,7 @@
         },
         data: () => ({
             selected: 0,
-            pages: ['Theme', 'Network']
+            pages: ['Network', 'Theme']
         }),
         computed: {
             open: {
