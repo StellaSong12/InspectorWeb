@@ -11,7 +11,7 @@ export function parseHeaders (headers) {
   for (const line of headers.split('\n')) {
     const [key, value] = line.split(': ')
     if (key) {
-      parsed[key.toLowerCase()] = value
+      parsed[key.trim().toLowerCase()] = value
     }
   }
   parsed.url = parseUrl(parsed.url)

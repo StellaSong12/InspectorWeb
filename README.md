@@ -14,3 +14,11 @@ https://github.com/pakerwreah/Inspector
 ![alt text](screenshots/database.png "Database")
 
 ![alt text](screenshots/network.png "Network")
+
+# Build Environment
+
+> npm -version
+> 6.14.15
+
+> npm install
+> npm run serve
