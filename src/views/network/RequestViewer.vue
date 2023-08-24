@@ -1,6 +1,6 @@
 <template>
     <div class="network-detail-container">
-        <v-expansion-panels v-if="request" :value="open" accordion>
+        <v-expansion-panels v-if="request" :value="panel" multiple>
             <v-expansion-panel>
                 <v-expansion-panel-header>
                     <v-layout>
@@ -82,6 +82,7 @@
             sortParams: Boolean
         },
         data: () => ({
+            panel: [1, 0],
             details: { headers: '', body: '', large: false },
             snackbar: { visible: false, text: '' }
         }),

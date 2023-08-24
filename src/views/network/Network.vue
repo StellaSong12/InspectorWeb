@@ -330,6 +330,11 @@
                         if (initSession || !this.session_list.length) {
                             this.session_list.push(this.newSession())
                             initSession = false
+
+                            this.$nextTick(() => {
+                                const scroll = this.$refs.scroll
+                                scroll.scrollTop = scroll.scrollHeight
+                            })
                         }
                         data.session = this.session.timestamp
                         data.timestamp = new Date().getTime()

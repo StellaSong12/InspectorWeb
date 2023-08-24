@@ -27,11 +27,11 @@
                     </v-flex>
                     <v-flex class="panel px-5">
                         <v-container v-if="selected === 0">
-                            <v-switch v-model="settings.network.sleep" label="Disconnect when Network is not selected" hide-details />
+                            <!-- <v-switch v-model="settings.network.sleep" label="Disconnect when Network is not selected" hide-details />
                             <v-flex offset-xs1>
                                 <small>(This helps to prevent unnecessary memory and cpu usage)</small>
                             </v-flex>
-                            <v-switch v-model="settings.network.sort_params" label="Sort request parameters" hide-details />
+                            <v-switch v-model="settings.network.sort_params" label="Sort request parameters" hide-details /> -->
                             <v-row class="mt-2">
                                 <v-col cols="3">
                                     <v-text-field
@@ -47,22 +47,22 @@
                                             v-mask="'#####'"
                                             hide-details />
                                 </v-col>
-                                <v-col cols="5">
+                                <!-- <v-col cols="5">
                                     <v-text-field
                                             label="Clear requests after"
                                             v-model="settings.network.limit"
                                             v-mask="'#####'"
                                             hide-details />
-                                </v-col>
+                                </v-col> -->
                             </v-row>
-                            <v-row>
+                            <!-- <v-row>
                                 <v-col>
                                     <v-text-field
                                             label="Adapter blacklist"
                                             v-model="settings.adapter_blacklist"
                                             hide-details />
                                 </v-col>
-                            </v-row>
+                            </v-row> -->
                         </v-container>
                         <v-container v-if="selected === 1">
                             <v-radio-group v-model="settings.dark_mode" row>

@@ -1,6 +1,7 @@
 <template>
     <div id="app">
         <v-app>
+            <notifications position="top right" duration="5" :max="1"/>
             <v-content>
                 <v-stepper v-model="current_page" non-linear>
                     <v-stepper-header>
@@ -52,6 +53,9 @@
                                 <DevicePicker v-if="show_device_picker" v-model="host" :devices="devices"/>
                                 <IPTextField v-else v-model="host"/>
                             </v-flex>
+                            <v-flex align-self-center>
+                                <span class="error-hint">{{ error_message }}</span>
+                            </v-flex>
                             <v-flex shrink>
                                 <v-btn v-if="electron" style="margin: -5px 0" fab x-small icon @click="show_device_picker = !show_device_picker">
                                     <v-icon v-text="show_device_picker ? 'mdi-pencil' : 'mdi-radar'"/>
@@ -92,7 +96,11 @@
     import { settings as default_settings } from './views/settings/defaults'
     import { defaultsDeep, orderBy, debounce } from 'lodash'
     import { cancelRequests } from './plugins/http'
+    import Vue from 'vue'
+    import Notifications from 'vue-notification';
     // import checkUpdate from './plugins/update'
+
+    Vue.use(Notifications);
 
     const pages = [
         {
@@ -129,7 +137,8 @@
             m_devices: [],
             now: Date.now(),
             // release: undefined,
-            show_device_picker: false
+            show_device_picker: false,
+            error_message: ""
         }),
         computed: {
             electron () {
@@ -243,12 +252,30 @@
             },
             loadPlugins () {
                 cancelRequests()
+                this.error_message = ""
+
+                this.$notify({
+                    type: 'info',
+                    title: '数据加载中...'
+                });
+
                 return this.$http.get('/plugins').then(({ data }) => {
-                    console.log(data)
+                    console.log("data: " + data)
+                    this.$notify({
+                        type: 'success',
+                        title: '数据加载完成'
+                    });
                     this.plugins = data
                 }).finally(() => {
                     const current_page = parseInt(localStorage.getItem('current_page'))
                     this.current_page = Math.min(Math.max(1, current_page), this.pages.length)
+                }).catch(error => {
+                    this.error_message = "请求失败: " + error.message
+                    this.$notify({
+                        type: 'error',
+                        title: '数据加载失败，请刷新重试',
+                        text: 'error.message'
+                    });
                 })
             },
             setRequestsCount (count) {
@@ -272,6 +299,10 @@
 
     .strike {
         text-decoration: line-through;
+    }
+    .error-hint {
+        margin: 0 0 0 10px;
+        color: red;
     }
 </style>
 
