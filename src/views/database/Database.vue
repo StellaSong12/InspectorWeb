@@ -41,6 +41,10 @@
     export default {
         name: 'Database',
         components: { Splitpanes, Pane, SqlConsole, TableView, TreeView },
+        props: {
+            ip: String,
+            port: String
+        },
         data: () => ({
             m_id: 0, // to stop loops on hot reload
             progress: 0,
@@ -66,6 +70,39 @@
             queryTable (table) {
                 this.query(`SELECT * FROM ${table}`)
             },
+            async queryWebsocket(path, sql) {
+                console.log("queryWebsocket", path, sql)
+                return await new Promise(resolve => {
+                    const ws = new WebSocket(path)
+                    ws.binaryType = 'arraybuffer'
+
+                    ws.onopen = () => {
+                        if (sql != null) {
+                            ws.send(sql)
+                        }                        
+                    }
+
+                    ws.onmessage = (msg) => {
+                        // console.log("onmessage", msg.data)
+                        resolve({success: true, data: msg.data})
+                    }
+
+                    ws.onclose = (msg) => {
+                        // console.log('close', msg)
+                        resolve({success: false, data: null})
+                    }
+
+                    ws.onerror = (error) => {
+                        // console.log("onerror", error)
+                        this.error = get(error, 'response.data.msg', error.message)
+                        resolve({success: false, data: error})
+                    }
+                    setTimeout(() => {
+                        ws.close()
+                        resolve({success: false, data: "请求超时"})
+                    }, 5000)
+                })
+            },
             async query (sql, script) {
                 if (this.loading) return
 
@@ -73,12 +110,15 @@
                 this.loading = true
                 this.info = ''
                 try {
-                    this.result = (await this.$http.post('/database/' + (script ? 'execute' : 'query'), sql)).data
+                    const res = await this.queryWebsocket(`ws://${this.ip}:${this.port}/database/${script ? 'execute' : 'query'}`, sql)
+                    if (!res.success) {
+                        throw new Error('请求失败，请重试')
+                    }
 
+                    this.result = JSON.parse(res.data)
                     this.last_query = sql
 
-                    setTimeout(() => this.resize(), 300)
-
+                    setTimeout(() => this.resize(), 3000)
                     this.info = 'Runtime: ' + formatDuration(this.result.duration)
 
                     if (/(^|\s)(create|alter|drop)\s/ig.test(sql)) {
@@ -118,25 +158,27 @@
             async getDatabases () {
                 const m_id = this.m_id
                 while (m_id === this.m_id) {
-                    if (this.$http.defaults.baseURL) {
-                        try {
-                            this.error = null
-                            this.progress = -1
-                            const r = await this.$http.get('/database/list')
-                            this.databases = r.data.databases
-                            this.currentdb = r.data.current
-                            if (this.databases.length) {
-                                await this.loadSchema(m_id)
-                            } else {
-                                this.schema = { tables: {} }
-                            }
+                    try {
+                        this.error = null
+                        this.progress = -1
+                        const res = await this.queryWebsocket(`ws://${this.ip}:${this.port}/database/list`)
+                        if (!res.success) {
+                            throw new Error('请求失败，请重试')
+                        }
+                        const data = JSON.parse(res.data)
+                        this.databases = data.databases
+                        this.currentdb = data.current
+                        if (this.databases.length) {
+                            await this.loadSchema(m_id)
+                        } else {
+                            this.schema = { tables: {} }
+                        }
+                        return
+                    } catch (error) {
+                        if (!this.shouldRetry(error)) {
+                            this.schema = { tables: {} }
+                            this.error = get(error, 'response.data.msg')
                             return
-                        } catch (error) {
-                            if (!this.shouldRetry(error)) {
-                                this.schema = { tables: {} }
-                                this.error = get(error, 'response.data.msg')
-                                return
-                            }
                         }
                     }
                     await sleep(3000)
@@ -153,7 +195,7 @@
                         this.error = null
                         this.progress = -1
                         this.schema = {}
-                        await this.$http.put('/database/current/' + index)
+                        await this.queryWebsocket(`ws://${this.ip}:${this.port}/database/current/` + index)
                         this.currentdb = index
                         await this.loadSchema(m_id)
                         return
@@ -180,38 +222,64 @@
                                 AND name NOT IN ('android_metadata', 'sqlite_sequence')
                                 ORDER BY name
                             `
-                const r = await this.$http.post('/database/query', sql_tables)
-
-                return r.data.data.map(d => d[0])
+                const res = await this.queryWebsocket(`ws://${this.ip}:${this.port}/database/query`, sql_tables)
+                if (res.success) {
+                    const data = JSON.parse(res.data)
+                    return data.data.map(d => d[0])
+                } else {
+                    this.$notify({
+                        type: 'error',
+                        title: '数据库加载失败，请刷新重试',
+                        text: res.data
+                    });
+                }
             },
             async getColumns (table) {
                 const sql_columns = `pragma table_info(${table})`
-                const r = await this.$http.post('/database/query', sql_columns)
-                const cols = r.data.data
-                const idx = name => r.data.headers.indexOf(name)
+                const res = await this.queryWebsocket(`ws://${this.ip}:${this.port}/database/query`, sql_columns)
                 const columns = {}
-                for (const c of cols) {
-                    columns[c[idx('name')]] = {
-                        type: c[idx('type')],
-                        notnull: !!c[idx('notnull')],
-                        dflt_value: c[idx('dflt_value')],
-                        pk: !!c[idx('pk')]
+                if (res.success) {
+                    const data = JSON.parse(res.data)
+                    const cols = data.data
+                    const idx = name => data.headers.indexOf(name)
+                    for (const c of cols) {
+                        columns[c[idx('name')]] = {
+                            type: c[idx('type')],
+                            notnull: !!c[idx('notnull')],
+                            dflt_value: c[idx('dflt_value')],
+                            pk: !!c[idx('pk')]
+                        }
                     }
+                } else {
+                    this.$notify({
+                        type: 'error',
+                        title: '数据库加载失败，请刷新重试',
+                        text: res.data
+                    });
                 }
                 return columns
             },
             async getForeignKeys (table) {
                 const sql_columns = `pragma foreign_key_list(${table})`
-                const r = await this.$http.post('/database/query', sql_columns)
-                const cols = r.data.data
-                const idx = name => r.data.headers.indexOf(name)
+                const res = await this.queryWebsocket(`ws://${this.ip}:${this.port}/database/query`, sql_columns)
                 const foreign_keys = []
-                for (const c of cols) {
-                    foreign_keys.push({
-                        from: c[idx('from')],
-                        table: c[idx('table')],
-                        to: c[idx('to')]
-                    })
+                if (res.success) {
+                    const data = JSON.parse(res.data)
+                    const cols = data.data
+                    const idx = name => r.data.headers.indexOf(name)
+                    for (const c of cols) {
+                        foreign_keys.push({
+                            from: c[idx('from')],
+                            table: c[idx('table')],
+                            to: c[idx('to')]
+                        })
+                    }
+                } else {
+                    this.$notify({
+                        type: 'error',
+                        title: '数据库加载失败，请刷新重试',
+                        text: res.data
+                    });
                 }
                 return foreign_keys
             },

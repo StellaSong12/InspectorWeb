@@ -33,16 +33,16 @@
                             </v-flex>
                             <v-switch v-model="settings.network.sort_params" label="Sort request parameters" hide-details /> -->
                             <v-row class="mt-2">
-                                <v-col cols="3">
+                                <!-- <v-col cols="3">
                                     <v-text-field
                                             label="http Port"
                                             v-model="settings.port"
                                             v-mask="'#####'"
                                             hide-details />
-                                </v-col>
+                                </v-col> -->
                                 <v-col cols="4">
                                     <v-text-field
-                                            label="socket Port"
+                                            label="Port"
                                             v-model="settings.websocket_port"
                                             v-mask="'#####'"
                                             hide-details />

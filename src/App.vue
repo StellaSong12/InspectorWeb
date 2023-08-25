@@ -33,7 +33,7 @@
 
                     <v-stepper-items>
                         <v-stepper-content :step="1">
-                            <Database />
+                            <Database :ip="host.ip" :port="settings.websocket_port" />
                         </v-stepper-content>
                         <v-stepper-content :step="2">
                             <Network :active="current_page === 2" :settings="settings.network" :ip="host.ip" :port="settings.websocket_port" @requests="setRequestsCount" />
@@ -259,24 +259,38 @@
                     title: '数据加载中...'
                 });
 
-                return this.$http.get('/plugins').then(({ data }) => {
-                    console.log("data: " + data)
+                const ws = new WebSocket(`ws://${this.host.ip}:${this.settings.websocket_port}/plugins`)
+                ws.binaryType = 'arraybuffer'
+
+                ws.onopen = () => {
+                    
+                }
+
+                ws.onmessage = (msg) => {
+                    const data = msg.data
+                    console.log("message", data);
                     this.$notify({
                         type: 'success',
                         title: '数据加载完成'
                     });
-                    this.plugins = data
-                }).finally(() => {
+                    this.plugins = JSON.parse(data)
+                    ws.close()
+                }
+
+                ws.onclose = () => {
                     const current_page = parseInt(localStorage.getItem('current_page'))
                     this.current_page = Math.min(Math.max(1, current_page), this.pages.length)
-                }).catch(error => {
+                }
+
+                ws.onerror = (error) => {
                     this.error_message = "请求失败: " + error.message
                     this.$notify({
                         type: 'error',
                         title: '数据加载失败，请刷新重试',
-                        text: 'error.message'
+                        text: error.message
                     });
-                })
+                }
+
             },
             setRequestsCount (count) {
                 this.requests = count
