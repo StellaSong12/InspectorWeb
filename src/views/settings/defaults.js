@@ -7,6 +7,7 @@ export const settings = {
     sort_params: true,
     limit: '250'
   },
-  websocket_port: '30006',
-  adapter_blacklist: 'pdp_ip0 vboxnet4 lo0'
+  port: '30006',
+  adapter_blacklist: 'pdp_ip0 vboxnet4 lo0',
+  version: 'v0.1.0',
 }

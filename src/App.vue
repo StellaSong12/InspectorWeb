@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <v-app>
-            <notifications position="top right" duration="5" :max="1"/>
+            <notifications position="top right" :duration="5" :max="1"/>
             <v-content>
                 <v-stepper v-model="current_page" non-linear>
                     <v-stepper-header>
@@ -33,10 +33,10 @@
 
                     <v-stepper-items>
                         <v-stepper-content :step="1">
-                            <Database :ip="host.ip" :port="settings.websocket_port" />
+                            <Database :ip="host.ip" :port="settings.port" />
                         </v-stepper-content>
                         <v-stepper-content :step="2">
-                            <Network :active="current_page === 2" :settings="settings.network" :ip="host.ip" :port="settings.websocket_port" @requests="setRequestsCount" />
+                            <Network :active="current_page === 2" :settings="settings.network" :ip="host.ip" :port="settings.port" @requests="setRequestsCount" />
                         </v-stepper-content>
                         <v-stepper-content v-for="(plugin, i) in plugins" :key="plugin.key" :step="i+3">
                             <Plugin :active="current_page === i+3" :plugin="plugin" />
@@ -50,17 +50,20 @@
                     <v-flex>
                         <v-layout>
                             <v-flex shrink>
-                                <DevicePicker v-if="show_device_picker" v-model="host" :devices="devices"/>
-                                <IPTextField v-else v-model="host"/>
+                                <!-- <DevicePicker v-if="show_device_picker" v-model="host" :devices="devices"/> -->
+                                <IPTextField v-model="host"/>
+                            </v-flex>
+                            <v-flex>
+                                <PortTextField v-model="settings_port" :settings.sync="settings" @input="settings.websocket_port = $event"/>
                             </v-flex>
                             <v-flex align-self-center>
                                 <span class="error-hint">{{ error_message }}</span>
                             </v-flex>
-                            <v-flex shrink>
+                            <!-- <v-flex shrink>
                                 <v-btn v-if="electron" style="margin: -5px 0" fab x-small icon @click="show_device_picker = !show_device_picker">
                                     <v-icon v-text="show_device_picker ? 'mdi-pencil' : 'mdi-radar'"/>
                                 </v-btn>
-                            </v-flex>
+                            </v-flex> -->
                         </v-layout>
                     </v-flex>
                     <!-- <v-flex shrink align-self-center>
@@ -79,6 +82,7 @@
                             </v-row>
                         </v-fade-transition>
                     </v-flex> -->
+                    <span>版本: {{ this.settings.version }}</span>
                 </v-layout>
             </v-footer>
             <Settings v-model="settings_popup" :settings.sync="settings" />
@@ -98,6 +102,7 @@
     import { cancelRequests } from './plugins/http'
     import Vue from 'vue'
     import Notifications from 'vue-notification';
+    import PortTextField from './components/PortTextField.vue'
     // import checkUpdate from './plugins/update'
 
     Vue.use(Notifications);
@@ -119,19 +124,21 @@
     export default {
         name: 'App',
         components: {
-            Database,
-            Network,
-            Plugin,
-            Settings,
-            DevicePicker,
-            IPTextField
-        },
+        Database,
+        Network,
+        Plugin,
+        Settings,
+        DevicePicker,
+        IPTextField,
+        PortTextField
+    },
         data: () => ({
             mounted: false,
             plugins: [],
             current_page: -1,
             requests: 0,
             settings_popup: false,
+            settings_port: false,
             settings: default_settings,
             host: { ip: '' },
             m_devices: [],
@@ -176,6 +183,10 @@
                     localStorage.setItem('settings', JSON.stringify(this.settings))
                 }
             },
+            settings_port (open) {
+                this.settings.port = open
+                localStorage.setItem('settings', JSON.stringify(this.settings))
+            },
             host (host) {
                 if (host.ip) {
                     this.saveHost(host)
@@ -215,7 +226,7 @@
             }
         },
         created () {
-            this.$http.defaults.baseURL = ''
+            // this.$http.defaults.baseURL = ''
             setInterval(this.ticker, deviceTimeout)
         },
         beforeMount () {
@@ -247,7 +258,7 @@
                 this.now = Date.now()
             },
             saveHost (host) {
-                this.$http.defaults.baseURL = `http://${host.ip}:${this.settings.port}`
+                // this.$http.defaults.baseURL = `http://${host.ip}:${this.settings.port}`
                 localStorage.setItem('host', JSON.stringify(host))
             },
             loadPlugins () {
@@ -259,7 +270,7 @@
                     title: '数据加载中...'
                 });
 
-                const ws = new WebSocket(`ws://${this.host.ip}:${this.settings.websocket_port}/plugins`)
+                const ws = new WebSocket(`ws://${this.host.ip}:${this.settings.port}/plugins`)
                 ws.binaryType = 'arraybuffer'
 
                 ws.onopen = () => {
@@ -268,7 +279,7 @@
 
                 ws.onmessage = (msg) => {
                     const data = msg.data
-                    console.log("message", data);
+                    // console.log("message", data);
                     this.$notify({
                         type: 'success',
                         title: '数据加载完成'
